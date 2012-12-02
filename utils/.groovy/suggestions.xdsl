@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<projectSuggestions>
+<declaringtype type="com.github.jlgrock.closuretoolslibrary.utils.io.FileIO">
+<property isActive="true" isStatic="true" name="IOUtils" type="java.lang.Object">
+<doc/>
+</property>
+</declaringtype>
+</projectSuggestions>

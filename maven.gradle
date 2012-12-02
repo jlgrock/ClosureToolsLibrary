@@ -1,0 +1,73 @@
+install {
+	repositories.mavenInstaller {
+		customizePom(pom, project)
+	}
+}
+
+ext.optionalDeps = []
+ext.providedDeps = []
+
+ext.optional = { optionalDeps << it }
+ext.provided = { providedDeps << it }
+
+def customizePom(pom, gradleProject) {
+	if (!gradleProject.properties.containsKey('githubProjectId')
+		|| !gradleProject.properties.containsKey('githubProjectName')
+		|| !gradleProject.properties.containsKey('githubProjectDescription')) {
+		throw new StopExecutionException("Pom Customization is expecting the following properties"
+			+ " to be set: gihubProjectId, gihubProjectName, githubProjectDescrption");
+	}
+	
+	pom.whenConfigured { generatedPom ->
+		// respect 'optional' and 'provided' dependencies
+		gradleProject.optionalDeps.each { dep ->
+			generatedPom.dependencies.find { it.artifactId == dep.name }?.optional = true
+		}
+		gradleProject.providedDeps.each { dep ->
+			generatedPom.dependencies.find { it.artifactId == dep.name }?.scope = 'provided'
+		}
+
+		// eliminate test-scoped dependencies (no need in maven central poms)
+		generatedPom.dependencies.removeAll { dep ->
+			dep.scope == 'test'
+		}
+
+		// add all items necessary for maven central publication
+		generatedPom.project {
+			def localId = gradleProject.properties['githubProjectId']
+			def localName = gradleProject.properties['githubProjectName']
+			def localDescription = gradleProject.properties['githubProjectDescription']
+			
+			name = localName
+			description = localDescription
+			url = 'https://github.com/jlgrock/' + localId
+//			organization {
+//				name = '?'
+//				url = '?'
+//			}
+			licenses {
+				license {
+					name = 'MIT License'
+					url = 'http://www.opensource.org/licenses/mit-license.php'
+					distribution = 'repo'
+				}
+			}
+			scm {
+				url = 'http://github.com/jlgrock/' + localId
+				connection = 'scm:git:git://github.com/jlgrock/' + localId
+				developerConnection = 'scm:git:git://github.com/jlgrock/' + localId
+			}
+			issueManagement {
+				url = 'https://github.com/jlgrock/' + localId + '/issues'
+				system = 'GitHub Issues'
+			}
+			developers {
+				developer {
+					id = 'jlgrock'
+					name = 'Justin Grant'
+					email = 'jlgrock@hotmail.com'
+				}
+			}
+		}
+	}
+}

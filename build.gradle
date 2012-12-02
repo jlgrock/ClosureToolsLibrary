@@ -1,0 +1,105 @@
+#!groovy
+// The above triggers groovy syntax highlighting in vim
+
+apply plugin: 'eclipse'
+
+subprojects {
+	version = '1.0.0-SNAPSHOT'
+	group = 'com.github.jlgrock.closuretoolslibrary'
+
+	//configurations.compile.transitive = true  // Make sure transitive project dependencies are resolved.
+
+	apply plugin: 'groovy'
+
+	dependencies {
+		// This is the groovy-all (rather than just "groovy") 
+		// due to a bug http://issues.gradle.org/browse/GRADLE-1803
+		groovy group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.0.5'
+		//This is the only version of spock available for groovy 2+.  Change to final release.
+		testCompile group: 'org.spockframework', name: 'spock-core', version: '0.7-groovy-2.0-SNAPSHOT'
+	}
+
+	apply plugin: 'codenarc'
+	dependencies {
+		codenarc group: 'org.codenarc', name: 'CodeNarc', version: '0.17'
+	}
+	codenarc {
+		configFile = new File(rootDir, "config/codenarc/codenarc.groovy")
+	}
+
+	apply plugin: 'maven'
+
+	//apply checkstyle code to all java subprojects
+	//	apply plugin: 'checkstyle'
+	//	checkstyle {
+	//		configFile = new File(rootDir, "config/checkstyle/checkstyle.xml")
+	//	 }
+
+	//apply findbugs to all java subprojects
+	//	apply plugin: 'findbugs'
+	//	dependencies {
+	//		compile group:'com.google.code.findbugs', name:'findbugs', version:'2.0.1'
+	//	}
+	//	findbugs {
+	//		toolVersion = '2.0.1'
+	//		ignoreFailures = false
+	//		reportsDir = file("$project.buildDir/findbugsReports")
+	//		effort ='max'
+	//		threshold = 'high'
+	//	}
+
+	task wrapper(type: Wrapper) { gradleVersion = '1.0' }
+
+	task sourceJar(type: Jar) {
+		description = "An archive of the source code for Maven Central"
+		classifier = "sources"
+		from sourceSets.main.groovy
+	}
+
+	task groovydocJar(type: Jar) {
+		description = "An archive of the GroovyDocs for Maven Central"
+		classifier = 'javadoc'
+		from groovydoc
+	}
+
+	artifacts { archives jar, groovydocJar, sourceJar }
+
+	//Add maven central to all subprojects
+	repositories {
+		if (project.hasProperty('useMavenLocal') && Boolean.valueOf(project.useMavenLocal)) { mavenLocal() }
+		mavenCentral()
+	}
+}
+
+//task action(dependsOn: ":producer:action") << {
+//    println("Consuming message: " +
+//            (rootProject.hasProperty('producerMessage') ? rootProject.producerMessage : 'null'))
+//}
+
+project(':utils') {
+	dependencies {
+		compile (
+				[group: 'commons-lang', name: 'commons-lang', version: '2.5'],
+				[group: 'commons-io', name: 'commons-io', version: '2.3'],
+				[group: 'log4j', name: 'log4j', version: '1.2.16']
+				)
+
+	}
+}
+
+project(':testparsing') {
+	dependencies {
+		compile project(':utils')
+		compile (
+				//[group: "com.github.jlgrock.closuretoolslibrary", name: 'utils', version: '1.0'],
+				[group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '2.26.0'],
+				[group: 'log4j', name: 'log4j', version: '1.2.16']
+				)
+
+	}
+}
+
+repositories {
+	if (project.hasProperty('useMavenLocal') && Boolean.valueOf(project.useMavenLocal)) { mavenLocal() }
+	mavenCentral()
+}
